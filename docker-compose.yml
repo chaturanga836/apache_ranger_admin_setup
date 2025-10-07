@@ -1,0 +1,17 @@
+
+
+services:
+
+  ranger-admin:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ranger-admin
+    ports:
+      - "6080:6080"
+
+    volumes:
+      - ranger-logs:/opt/ranger-admin/logs
+
+volumes:
+  ranger-logs:
