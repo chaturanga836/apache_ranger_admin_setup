@@ -11,14 +11,11 @@ services:
       - ranger-logs:/opt/ranger-admin/logs
     networks:
       - ranger-postgres-net
-    depends_on:
-      ranger-db:
-        condition: service_healthy
     command: ["/opt/ranger/setup.sh"]
 
 volumes:
   ranger-logs:
-  
+
 networks:
   ranger-postgres-net:
     external: true
