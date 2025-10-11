@@ -19,7 +19,7 @@ COPY lib/postgresql-42.7.8.jar /opt/ranger/lib/
 RUN chmod +x ${RANGER_HOME}/setup.sh ${RANGER_HOME}/ews/ranger-admin-services.sh
 
 # Run setup to initialize DB schema and configuration
-RUN ${RANGER_HOME}/setup.sh
+# RUN ${RANGER_HOME}/setup.sh
 
 # Expose web UI
 EXPOSE 6080
