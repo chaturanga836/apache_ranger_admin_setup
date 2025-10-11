@@ -1,7 +1,4 @@
-
-
 services:
-
   ranger-admin:
     build:
       context: .
@@ -12,6 +9,10 @@ services:
 
     volumes:
       - ranger-logs:/opt/ranger-admin/logs
-
+    networks:
+      - ranger-postgres-net
 volumes:
   ranger-logs:
+networks:
+  ranger-postgres-net:
+    external: true
