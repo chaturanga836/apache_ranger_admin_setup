@@ -1,0 +1,24 @@
+FROM openjdk:8-jdk
+
+ENV RANGER_HOME=/opt/ranger
+WORKDIR /opt/ranger
+
+RUN apt-get update && apt-get install -y python3 python3-pip && \
+    pip3 install psycopg2-binary && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Copy your Ranger Admin build
+COPY ranger-admin /opt/ranger
+COPY lib/postgresql-42.7.8.jar /opt/ranger/lib/
+
+# Copy Python helper
+COPY scripts/check_and_prepare_db.py /opt/ranger/scripts/check_and_prepare_db.py
+RUN chmod +x /opt/ranger/scripts/check_and_prepare_db.py
+
+# Run DB prep + setup.sh
+RUN /opt/ranger/scripts/check_and_prepare_db.py || echo "DB not ready yet — skipping setup."
+
+# Output configuration files (optional)
+VOLUME ["/opt/ranger/output"]
+
+CMD ["/bin/bash"]
