@@ -1,28 +1,34 @@
-# ===============================
-# Dockerfile.admin
-# ===============================
-FROM openjdk:8-jdk
+FROM eclipse-temurin:8-jdk
 
 ENV RANGER_HOME=/opt/ranger
 WORKDIR /opt/ranger
 
-# Install dependencies
-RUN apt-get update && apt-get install -y bc curl
+RUN apt-get update && apt-get install -y python3 python3-pip && \
+    pip3 install --break-system-packages psycopg2-binary && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Copy extracted Ranger admin tarball (already extracted)
+# Copy your Ranger Admin build
 COPY ranger-admin /opt/ranger
-
-# Copy Postgres JDBC driver
 COPY lib/postgresql-42.7.8.jar /opt/ranger/lib/
 
-# Make setup and service scripts executable
-RUN chmod +x ${RANGER_HOME}/setup.sh ${RANGER_HOME}/ews/ranger-admin-services.sh
+# Copy Python helper
+COPY scripts/check_and_prepare_db.py /opt/ranger/scripts/check_and_prepare_db.py
+RUN chmod +x /opt/ranger/scripts/check_and_prepare_db.py
 
-# Run setup to initialize DB schema and configuration
-RUN ${RANGER_HOME}/setup.sh
+# Run DB prep + setup.sh
+RUN /opt/ranger/scripts/check_and_prepare_db.py || echo "DB not ready yet — skipping setup."
 
-# Expose web UI
-EXPOSE 6080
+# RUN chmod +x setup.sh
+RUN chmod +x /opt/ranger/setup.sh && \
+    chmod +x /opt/ranger/ews/ranger-admin-services.sh
 
-# Start Ranger Admin service
-CMD ["/bin/bash", "-c", "/opt/ranger/ews/ranger-admin-services.sh start && tail -f /opt/ranger/ews/logs/ranger-admin-*.log"]
+# RUN ./setup.sh
+# # Output configuration files (optional)
+# VOLUME ["/opt/ranger/output"]
+
+# CMD ["/bin/bash"]
+
+COPY scripts/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+CMD ["/entrypoint.sh"]
