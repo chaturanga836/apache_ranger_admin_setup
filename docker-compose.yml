@@ -17,4 +17,4 @@ volumes:
 
 networks:
   ranger-postgres-net:
-    external: true
+    driver: bridge
