@@ -9,6 +9,11 @@ done
 
 echo "Postgres is up. Running Ranger setup..."
 # Run setup only if not already initialized
+
+echo "Running Solr audit setup..."
+${RANGER_HOME}/contrib/solr_for_audit_setup/setup.sh
+
+
 if [ ! -f "${RANGER_HOME}/ews/webapp/WEB-INF/classes/conf/ranger-admin-site.xml" ]; then
   ${RANGER_HOME}/setup.sh
 else
