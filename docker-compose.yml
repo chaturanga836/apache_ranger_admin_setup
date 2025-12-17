@@ -19,4 +19,4 @@ networks:
   ranger-postgres-net:
     driver: bridge
   apache-solr_default:
-    external: tru
+    external: true
