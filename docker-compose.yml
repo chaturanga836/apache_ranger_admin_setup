@@ -11,6 +11,7 @@ services:
       - ranger-logs:/opt/ranger-admin/logs
     networks:
       - ranger-postgres-net
+      - apache-solr_default
 
 volumes:
   ranger-logs:
