@@ -1,12 +1,21 @@
 FROM eclipse-temurin:8-jdk
 
 ENV RANGER_HOME=/opt/ranger
+ENV HADOOP_VERSION=3.3.6
+ENV HADOOP_HOME=/opt/hadoop/hadoop-3.3.6
+ENV PATH=$HADOOP_HOME/bin:$HADOOP_HOME/sbin:$PATH
+ENV CLASSPATH=$HADOOP_HOME/share/hadoop/common/*:$HADOOP_HOME/share/hadoop/common/lib/*
 WORKDIR /opt/ranger
 
 # Install dependencies
 RUN apt-get update && apt-get install -y python3 python3-pip && \
     pip3 install --break-system-packages psycopg2-binary && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p $HADOOP_HOME && \
+    wget -qO- https://archive.apache.org/dist/hadoop/common/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}.tar.gz \
+    | tar -xz -C /opt && \
+    mv /opt/hadoop-${HADOOP_VERSION} $HADOOP_HOME
 
 # Copy Ranger Admin build directory
 COPY ranger-admin /opt/ranger
