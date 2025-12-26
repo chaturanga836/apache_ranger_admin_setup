@@ -12,6 +12,7 @@ services:
     networks:
       - ranger-postgres-net
       - apache-solr_default
+      - ldap_service_ldap_network
 
 volumes:
   ranger-logs:
@@ -20,4 +21,6 @@ networks:
   ranger-postgres-net:
     driver: bridge
   apache-solr_default:
+    external: true
+  ldap_service_ldap_network:
     external: true
