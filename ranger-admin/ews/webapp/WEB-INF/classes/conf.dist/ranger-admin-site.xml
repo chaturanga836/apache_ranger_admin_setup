@@ -114,42 +114,42 @@
 	</property>
 	<property>
 		<name>ranger.ldap.url</name>
-		<value>ldap://</value>
+		<value>ldap://ldap-server:389</value>
 		<description></description>
 	</property>
 		<property>
 		<name>ranger.ldap.user.dnpattern</name>
-		<value>uid={0},ou=users,dc=xasecure,dc=net</value>
+		<value></value>
 		<description></description>
 	</property>
 		<property>
 		<name>ranger.ldap.group.searchbase</name>
-		<value>ou=groups,dc=xasecure,dc=net</value>
+		<value>dc=example,dc=com</value>
 		<description></description>
 	</property>
 	<property>
 		<name>ranger.ldap.group.searchfilter</name>
-		<value>(member=uid={0},ou=users,dc=xasecure,dc=net)</value>
+		<value>(objectClass=organizationalUnit)</value>
 		<description></description>
 	</property>
 	<property>
 		<name>ranger.ldap.group.roleattribute</name>
-		<value>cn</value>
+		<value>ou</value>
 		<description></description>
 	</property>
 	<property>
 		<name>ranger.ldap.base.dn</name>
-		<value></value>
+		<value>dc=example,dc=com</value>
 		<description>LDAP base dn or search base</description>
 	</property>
 	<property>
 		<name>ranger.ldap.bind.dn</name>
-		<value></value>
+		<value>cn=admin,dc=example,dc=com</value>
 		<description>LDAP bind dn or manager dn</description>
 	</property>
 	<property>
 		<name>ranger.ldap.bind.password</name>
-		<value></value>
+		<value>admin123</value>
 		<description>LDAP bind password</description>
 	</property>
 	<property>
