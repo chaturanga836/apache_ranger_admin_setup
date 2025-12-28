@@ -13,11 +13,14 @@ services:
       - ranger-postgres-net
       - apache-solr_default
       - ldap_service_ldap_network
+      - trino-ranger-net
 
 volumes:
   ranger-logs:
 
 networks:
+  trino-ranger-net:
+    driver: bridge
   ranger-postgres-net:
     driver: bridge
   apache-solr_default:
