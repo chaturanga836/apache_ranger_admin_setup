@@ -169,7 +169,7 @@
 	<property>
 		<name>ranger.ldap.ad.url</name>
 		<value></value>
-		<description>ldap://</description>
+		<description>ldaps://</description>
 	</property>
 
 	<property>
