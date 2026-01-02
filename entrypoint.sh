@@ -2,8 +2,8 @@
 set -e
 
 # LDAPS CA truststore settings
-JAVA_TRUSTSTORE=${RANGER_HOME}/certs/truststore.jks
-JAVA_TRUSTSTORE_PASSWORD=changeit
+export JAVA_TRUSTSTORE=/opt/ranger/cacerts
+export JAVA_TRUSTSTORE_PASSWORD=changeit
 
 # Import LDAP CA if not already imported
 if [ ! -f "$JAVA_TRUSTSTORE" ]; then
@@ -11,7 +11,7 @@ if [ ! -f "$JAVA_TRUSTSTORE" ]; then
     mkdir -p $(dirname $JAVA_TRUSTSTORE)
     keytool -importcert -noprompt \
         -alias ldap-ca \
-        -file ${RANGER_HOME}/certs/ca.crt \
+        -file /opt/ranger/certs/ca.crt \
         -keystore $JAVA_TRUSTSTORE \
         -storepass $JAVA_TRUSTSTORE_PASSWORD
 fi
