@@ -1,40 +1,47 @@
 #!/bin/bash
 set -e
 
-# LDAPS CA truststore settings
-export JAVA_TRUSTSTORE=/opt/ranger/cacerts
-export JAVA_TRUSTSTORE_PASSWORD=changeit
+# 1. Path to the System Java Truststore (for eclipse-temurin:8)
+SYSTEM_CACERTS="/opt/java/openjdk/jre/lib/security/cacerts"
 
-# Import LDAP CA if not already imported
-if [ ! -f "$JAVA_TRUSTSTORE" ]; then
-    echo "Importing LDAP CA certificate into Java truststore..."
-    mkdir -p $(dirname $JAVA_TRUSTSTORE)
+# 2. Import the certificate into the System Truststore
+if [ -f "/opt/ranger/certs/ca.crt" ]; then
+    echo "Importing LDAP CA certificate into System Java truststore..."
+    # We use 'changeit' as it is the default Java password
     keytool -importcert -noprompt \
         -alias ldap-ca \
         -file /opt/ranger/certs/ca.crt \
-        -keystore $JAVA_TRUSTSTORE \
-        -storepass $JAVA_TRUSTSTORE_PASSWORD
+        -keystore "$SYSTEM_CACERTS" \
+        -storepass changeit || echo "Certificate already trusted."
 fi
 
-# Export truststore for Ranger JVM
-export JAVA_TOOL_OPTIONS="-Djavax.net.ssl.trustStore=$JAVA_TRUSTSTORE -Djavax.net.ssl.trustStorePassword=$JAVA_TRUSTSTORE_PASSWORD"
-
-# Wait for PostgreSQL
-echo "Waiting for PostgreSQL to be ready..."
+# 3. Wait for PostgreSQL
+echo "Waiting for PostgreSQL..."
 until pg_isready -h ranger-db -p 5432 -U postgres; do
-  echo "Postgres not ready yet, sleeping..."
   sleep 3
 done
 
-echo "PostgreSQL is up. Running Ranger setup..."
-
-# Run Solr audit setup (optional, if using Solr)
-echo "Running Solr audit setup..."
-${RANGER_HOME}/contrib/solr_for_audit_setup/setup.sh
-
-# Run setup.sh only if Ranger not initialized
+# 4. Run setup.sh if not configured
 if [ ! -f "${RANGER_HOME}/.setup_done" ]; then
+    echo "Running Ranger Admin setup..."
     ${RANGER_HOME}/setup.sh
     touch ${RANGER_HOME}/.setup_done
-else
-    echo "Ranger alrea
+fi
+
+# 5. FIX: Patch the XML to force SSL=true
+# Ranger setup.sh often defaults this to false even with ldaps:// url
+ADMIN_CONF="${RANGER_HOME}/ews/webapp/WEB-INF/classes/conf/ranger-admin-site.xml"
+if [ -f "$ADMIN_CONF" ]; then
+    echo "Ensuring ranger.ldap.url.ssl is true in config..."
+    xmlstarlet ed -L -d "//property[name='ranger.ldap.url.ssl']" "$ADMIN_CONF"
+    xmlstarlet ed -L -s "/configuration" -t elem -n "property" -v "" \
+      -s "/configuration/property[last()]" -t elem -n "name" -v "ranger.ldap.url.ssl" \
+      -s "/configuration/property[last()]" -t elem -n "value" -v "true" "$ADMIN_CONF"
+fi
+
+echo "Starting Ranger Admin Services..."
+cd ${RANGER_HOME}/ews
+./ranger-admin-services.sh start
+
+# Keep container alive
+tail -f ${RANGER_HOME}/logs/ranger-admin-*.log

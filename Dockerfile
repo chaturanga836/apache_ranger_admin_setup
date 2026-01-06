@@ -8,9 +8,13 @@ ENV CLASSPATH=$HADOOP_HOME/share/hadoop/common/*:$HADOOP_HOME/share/hadoop/commo
 WORKDIR /opt/ranger
 
 # Install dependencies
-RUN apt-get update && apt-get install -y python3 python3-pip && \
-    pip3 install --break-system-packages psycopg2-binary && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    xmlstarlet \
+    postgresql-client \
+    && pip3 install --break-system-packages psycopg2-binary \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p $HADOOP_HOME && \
     wget -qO- https://archive.apache.org/dist/hadoop/common/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}.tar.gz \
