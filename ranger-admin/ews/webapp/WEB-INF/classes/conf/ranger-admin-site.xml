@@ -114,7 +114,7 @@
 	</property>
 	<property>
 		<name>ranger.ldap.url</name>
-		<value>ldaps://ldap-server:636</value>
+		<value>ldaps://ec2-65-0-150-75.ap-south-1.compute.amazonaws.com:636</value>
 		<description></description>
 	</property>
 		<property>
