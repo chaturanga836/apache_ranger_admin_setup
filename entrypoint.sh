@@ -1,53 +1,43 @@
 #!/bin/bash
 set -e
 
-# 1. Use the ENV variable to find the correct truststore
-# For Java 8, it is in jre/lib/security/
+# Target the path you verified works manually
 SYSTEM_CACERTS="/opt/java/openjdk/jre/lib/security/cacerts"
 
-echo "Using Java Home: $JAVA_HOME"
-echo "Targeting Truststore: $SYSTEM_CACERTS"
-
-# 2. Import the LDAP CA
-if [ -f "/opt/ranger/certs/ca.crt" ]; then
-    echo "Found ca.crt. Importing into System Truststore..."
-    
-    # Delete if exists to prevent 'already exists' error
-    keytool -delete -alias ldap-ca -keystore "$SYSTEM_CACERTS" -storepass changeit || true
-    
-    # Import
-    keytool -importcert -noprompt \
-        -alias ldap-ca \
-        -file /opt/ranger/certs/ca.crt \
-        -keystore "$SYSTEM_CACERTS" \
-        -storepass changeit
-    
-    echo "Success: Certificate imported into Ranger Admin's Java environment."
-else
-    echo "ERROR: /opt/ranger/certs/ca.crt is missing. Check your Dockerfile COPY command."
-    exit 1
-fi
-
-# 3. Wait for DB
+# 1. Wait for DB
 until pg_isready -h ranger-db -p 5432 -U postgres; do
   echo "Waiting for DB..."
   sleep 2
 done
 
-# 4. Run setup (only if not done)
+# 2. Run Ranger Setup (DO THIS FIRST)
 if [ ! -f "${RANGER_HOME}/.setup_done" ]; then
+    echo "[I] Running Ranger setup.sh..."
     ${RANGER_HOME}/setup.sh
     touch ${RANGER_HOME}/.setup_done
 fi
 
+# 3. NOW IMPORT THE CERTIFICATE (After setup has finished)
+if [ -f "/opt/ranger/certs/ca.crt" ]; then
+    echo "[I] Importing ca.crt into $SYSTEM_CACERTS..."
+    # Ensure write permissions
+    chmod +w "$SYSTEM_CACERTS"
+    # Clean up old entry and import fresh
+    keytool -delete -alias ldap-cert -keystore "$SYSTEM_CACERTS" -storepass changeit || true
+    keytool -import -trustcacerts -noprompt \
+        -alias ldap-cert \
+        -file /opt/ranger/certs/ca.crt \
+        -keystore "$SYSTEM_CACERTS" \
+        -storepass changeit
+    echo "[V] Success: Certificate trusted."
+else
+    echo "[E] ERROR: /opt/ranger/certs/ca.crt missing!"
+    exit 1
+fi
 
-
-# 4. Patch XML (Robust logic to prevent NullPointerException)
-echo "[I] Patching XML configurations..."
-echo "[I] Adding missing SSL enable property..."
+# 4. Patch XML configurations
+echo "[I] Patching XML for LDAP SSL..."
 CONF="conf/ranger-ugsync-site.xml"
-
-# Function to safely update or add properties
 update_prop() {
     local name=$1
     local value=$2
@@ -60,16 +50,14 @@ update_prop() {
     fi
 }
 
-# Force these critical values to kill the NPE
 update_prop "ranger.usersync.ldap.sslEnabled" "true"
-update_prop "ranger.usersync.truststore.file" "/opt/java/openjdk/lib/security/cacerts"
+update_prop "ranger.usersync.truststore.file" "$SYSTEM_CACERTS"
 update_prop "ranger.usersync.truststore.password" "changeit"
-update_prop "ranger.usersync.ldap.ssl.truststore" "/opt/java/openjdk/lib/security/cacerts"
+update_prop "ranger.usersync.ldap.ssl.truststore" "$SYSTEM_CACERTS"
 update_prop "ranger.usersync.ldap.ssl.truststore.password" "changeit"
-update_prop "ranger.usersync.ldap.ssl.truststore.type" "JKS"
 update_prop "ranger.usersync.ldap.url" "ldaps://ec2-65-0-150-75.ap-south-1.compute.amazonaws.com:636"
 
-# 6. Start the service
+# 5. Start the service
 cd ${RANGER_HOME}/ews
 ./ranger-admin-services.sh start
 tail -f ${RANGER_HOME}/logs/ranger-admin-*.log
