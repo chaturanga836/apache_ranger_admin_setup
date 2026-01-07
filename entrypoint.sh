@@ -41,12 +41,30 @@ if [ ! -f "${RANGER_HOME}/.setup_done" ]; then
 fi
 
 # 5. Patch the XML for LDAPS (Crucial for John Doe)
-ADMIN_CONF="${RANGER_HOME}/ews/webapp/WEB-INF/classes/conf/ranger-admin-site.xml"
-echo "Patching ranger-admin-site.xml..."
-xmlstarlet ed -L -d "//property[name='ranger.ldap.url.ssl']" "$ADMIN_CONF"
-xmlstarlet ed -L -s "/configuration" -t elem -n "property" -v "" \
-  -s "/configuration/property[last()]" -t elem -n "name" -v "ranger.ldap.url.ssl" \
-  -s "/configuration/property[last()]" -t elem -n "value" -v "true" "$ADMIN_CONF"
+echo "[I] Patching XML configurations..."
+CONF="conf/ranger-ugsync-site.xml"
+
+# Function to safely update or add properties
+update_prop() {
+    local name=$1
+    local value=$2
+    if xmlstarlet sel -t -v "//property[name='$name']" "$CONF" > /dev/null 2>&1; then
+        xmlstarlet ed -L -u "//property[name='$name']/value" -v "$value" "$CONF"
+    else
+        xmlstarlet ed -L -s "/configuration" -t elem -n "property" -v "" \
+            -s "/configuration/property[last()]" -t elem -n "name" -v "$name" \
+            -s "/configuration/property[last()]" -t elem -n "value" -v "$value" "$CONF"
+    fi
+}
+
+# Force these critical values to kill the NPE
+update_prop "ranger.usersync.ldap.sslEnabled" "true"
+update_prop "ranger.usersync.truststore.file" "/opt/java/openjdk/lib/security/cacerts"
+update_prop "ranger.usersync.truststore.password" "changeit"
+update_prop "ranger.usersync.ldap.ssl.truststore" "/opt/java/openjdk/lib/security/cacerts"
+update_prop "ranger.usersync.ldap.ssl.truststore.password" "changeit"
+update_prop "ranger.usersync.ldap.ssl.truststore.type" "JKS"
+update_prop "ranger.usersync.ldap.url" "ldaps://ec2-65-0-150-75.ap-south-1.compute.amazonaws.com:636"
 
 # 6. Start the service
 cd ${RANGER_HOME}/ews
