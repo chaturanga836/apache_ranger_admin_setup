@@ -22,3 +22,16 @@ ranger-admin-services.sh
 
 
 cd ~/ranger-build
+
+### If no work run this inside the container
+
+``` bash
+keytool -import -trustcacerts -alias ldap-cert \
+-file /opt/ranger/certs/ca.crt \
+-keystore /opt/java/openjdk/jre/lib/security/cacerts \
+-storepass changeit -noprompt
+```
+``` bash
+keytool -list -keystore /opt/java/openjdk/jre/lib/security/cacerts -alias ldap-cert -storepass changeit
+```
+then restart again

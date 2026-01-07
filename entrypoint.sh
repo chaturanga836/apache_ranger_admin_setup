@@ -3,7 +3,7 @@ set -e
 
 # 1. Use the ENV variable to find the correct truststore
 # For Java 8, it is in jre/lib/security/
-SYSTEM_CACERTS="${JAVA_HOME}/jre/lib/security/cacerts"
+SYSTEM_CACERTS="/opt/java/openjdk/jre/lib/security/cacerts"
 
 echo "Using Java Home: $JAVA_HOME"
 echo "Targeting Truststore: $SYSTEM_CACERTS"
@@ -40,8 +40,11 @@ if [ ! -f "${RANGER_HOME}/.setup_done" ]; then
     touch ${RANGER_HOME}/.setup_done
 fi
 
-# 5. Patch the XML for LDAPS (Crucial for John Doe)
+
+
+# 4. Patch XML (Robust logic to prevent NullPointerException)
 echo "[I] Patching XML configurations..."
+echo "[I] Adding missing SSL enable property..."
 CONF="conf/ranger-ugsync-site.xml"
 
 # Function to safely update or add properties
