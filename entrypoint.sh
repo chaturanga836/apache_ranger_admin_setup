@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+exec > >(tee -a /proc/1/fd/1) 2>&1
+
 SYSTEM_CACERTS="/opt/java/openjdk/jre/lib/security/cacerts"
 
 # 1. Run Setup
