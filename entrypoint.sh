@@ -1,47 +1,50 @@
 #!/bin/bash
-set -e
+# Remove 'set -e' for the cert import section to prevent crashes
+set -u 
 
-# THE SIGNATURE - You should see this in docker logs immediately
 echo "----------------------------------------------------"
 echo "!!! CUSTOM ENTRYPOINT STARTING ON EC2 !!!"
 echo "----------------------------------------------------"
 
-# Fix permissions for all Ranger scripts to prevent "Permission Denied"
-chmod +x ${RANGER_HOME}/*.sh
-chmod +x ${RANGER_HOME}/ews/*.sh
+cd ${RANGER_HOME}
 
 # 1. Run Setup
-if [ ! -f "${RANGER_HOME}/.setup_done" ]; then
+if [ ! -f ".setup_done" ]; then
     echo "[I] Running Ranger setup.sh..."
-    cd ${RANGER_HOME}
-    ./setup.sh
-    touch ${RANGER_HOME}/.setup_done
+    ./setup.sh && touch .setup_done
 fi
 
-# 2. Apply your "Manual Fix" automatically
+# 2. Apply LDAPS Patch
 echo "[I] Applying LDAPS and Certificate Patch..."
 ADMIN_CONF="${RANGER_HOME}/ews/webapp/WEB-INF/classes/conf/ranger-admin-site.xml"
-SYSTEM_CACERTS="/opt/java/openjdk/jre/lib/security/cacerts"
 
-# Patch XML
-xmlstarlet ed -L -u "//property[name='ranger.ldap.url']/value" -v "ldaps://ec2-65-0-150-75.ap-south-1.compute.amazonaws.com:636" "$ADMIN_CONF"
-xmlstarlet ed -L -u "//property[name='ranger.ldap.ssl.enabled']/value" -v "true" "$ADMIN_CONF"
+# Find the correct cacerts path dynamically
+SYSTEM_CACERTS=$(find /opt/java/openjdk -name cacerts)
 
-# Import Cert
 if [ -f "/opt/ranger/certs/ca.crt" ]; then
-    chmod +w "$SYSTEM_CACERTS"
-    keytool -delete -alias ldap-cert -keystore "$SYSTEM_CACERTS" -storepass changeit || true
+    echo "[I] Found certificate, importing to $SYSTEM_CACERTS..."
+    # Delete if exists, ignore errors
+    keytool -delete -alias ldap-cert -keystore "$SYSTEM_CACERTS" -storepass changeit -noprompt 2>/dev/null || true
+    # Import
     keytool -import -trustcacerts -noprompt -alias ldap-cert -file /opt/ranger/certs/ca.crt -keystore "$SYSTEM_CACERTS" -storepass changeit
+else
+    echo "[WARN] /opt/ranger/certs/ca.crt not found!"
 fi
 
-# 3. THE RESTART (Crucial part of your manual fix)
-echo "[I] Restarting Ranger to refresh JVM Truststore..."
+# Patch XML using xmlstarlet
+if [ -f "$ADMIN_CONF" ]; then
+    xmlstarlet ed -L -u "//property[name='ranger.ldap.url']/value" -v "ldaps://ec2-65-0-150-75.ap-south-1.compute.amazonaws.com:636" "$ADMIN_CONF"
+    xmlstarlet ed -L -u "//property[name='ranger.ldap.ssl.enabled']/value" -v "true" "$ADMIN_CONF"
+    echo "[I] XML Patch applied."
+fi
+
+# 3. Start Service
+echo "[I] Starting Ranger Admin..."
 cd ${RANGER_HOME}/ews
-./ranger-admin-services.sh stop || true
-pkill -9 -f 'java' || true
-sleep 2
+./ranger-admin-services.sh stop 2>/dev/null || true
 ./ranger-admin-services.sh start
 
-# 4. Stream Logs
-echo "[I] Streaming Ranger logs to console..."
+# 4. Keep container alive and stream logs
+echo "[I] Streaming logs..."
+touch ${RANGER_HOME}/logs/ranger-admin-$(hostname)-root.log
 tail -f ${RANGER_HOME}/logs/ranger-admin-*.log
