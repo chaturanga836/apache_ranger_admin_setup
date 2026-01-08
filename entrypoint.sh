@@ -17,23 +17,7 @@ if [ ! -f "${RANGER_HOME}/.setup_done" ]; then
     touch ${RANGER_HOME}/.setup_done
 fi
 
-# 3. NOW IMPORT THE CERTIFICATE (After setup has finished)
-if [ -f "/opt/ranger/certs/ca.crt" ]; then
-    echo "[I] Importing ca.crt into $SYSTEM_CACERTS..."
-    # Ensure write permissions
-    chmod +w "$SYSTEM_CACERTS"
-    # Clean up old entry and import fresh
-    keytool -delete -alias ldap-cert -keystore "$SYSTEM_CACERTS" -storepass changeit || true
-    keytool -import -trustcacerts -noprompt \
-        -alias ldap-cert \
-        -file /opt/ranger/certs/ca.crt \
-        -keystore "$SYSTEM_CACERTS" \
-        -storepass changeit
-    echo "[V] Success: Certificate trusted."
-else
-    echo "[E] ERROR: /opt/ranger/certs/ca.crt missing!"
-    exit 1
-fi
+
 
 # 4. Patch XML configurations
 echo "[I] Patching XML for LDAP SSL..."
@@ -57,6 +41,23 @@ update_prop "ranger.usersync.ldap.ssl.truststore" "$SYSTEM_CACERTS"
 update_prop "ranger.usersync.ldap.ssl.truststore.password" "changeit"
 update_prop "ranger.usersync.ldap.url" "ldaps://ec2-65-0-150-75.ap-south-1.compute.amazonaws.com:636"
 
+# 3. NOW IMPORT THE CERTIFICATE (After setup has finished)
+if [ -f "/opt/ranger/certs/ca.crt" ]; then
+    echo "[I] Importing ca.crt into $SYSTEM_CACERTS..."
+    # Ensure write permissions
+    chmod +w "$SYSTEM_CACERTS"
+    # Clean up old entry and import fresh
+    keytool -delete -alias ldap-cert -keystore "$SYSTEM_CACERTS" -storepass changeit || true
+    keytool -import -trustcacerts -noprompt \
+        -alias ldap-cert \
+        -file /opt/ranger/certs/ca.crt \
+        -keystore "$SYSTEM_CACERTS" \
+        -storepass changeit
+    echo "[V] Success: Certificate trusted."
+else
+    echo "[E] ERROR: /opt/ranger/certs/ca.crt missing!"
+    exit 1
+fi
 # 5. Start the service
 cd ${RANGER_HOME}/ews
 # ./ranger-admin-services.sh start
