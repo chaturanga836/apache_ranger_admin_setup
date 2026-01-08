@@ -47,4 +47,11 @@ cd ${RANGER_HOME}/ews
 # 4. Keep container alive and stream logs
 echo "[I] Streaming logs..."
 touch ${RANGER_HOME}/logs/ranger-admin-$(hostname)-root.log
-tail -f ${RANGER_HOME}/logs/ranger-admin-*.log
+
+while [ ! -f /opt/ranger/ews/logs/ranger-admin-$(hostname)-root.log ]; do
+  sleep 2
+done
+
+# Now that the file exists, the * will work perfectly
+echo "[I] Logs found! Streaming..."
+tail -f /opt/ranger/ews/logs/ranger-admin-*.log
