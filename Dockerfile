@@ -61,4 +61,4 @@ RUN apt-get update && apt-get install -y dos2unix && \
 
 # FIX 2: Use ENTRYPOINT instead of CMD
 # This makes the script the "Owner" of the container process
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]
