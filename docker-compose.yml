@@ -4,6 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: ranger-admin
+    entrypoint: ["/bin/bash", "/entrypoint.sh"]
     ports:
       - "6080:6080"
 
