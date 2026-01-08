@@ -52,13 +52,13 @@ COPY certs/tls.crt /opt/ranger/certs/ca.crt
 
 # CMD ["/entrypoint.sh"]
 
-COPY scripts/entrypoint.sh /entrypoint.sh
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 
 # FIX 1: Convert to Unix line endings (Crucial for EC2/Ubuntu)
-RUN apt-get update && apt-get install -y dos2unix && \
-    dos2unix /entrypoint.sh && \
-    chmod +x /entrypoint.sh
+RUN apt-get update && apt-get install -y dos2unix bc && \
+    dos2unix /usr/local/bin/entrypoint.sh && \
+    chmod +x /usr/local/bin/entrypoint.sh
 
 # FIX 2: Use ENTRYPOINT instead of CMD
 # This makes the script the "Owner" of the container process
-ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]
+ENTRYPOINT ["/bin/bash", "/usr/local/bin/entrypoint.sh"]
