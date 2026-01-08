@@ -9,12 +9,19 @@ services:
       - "6080:6080"
 
     volumes:
-      - ranger-logs:/opt/ranger-admin/logs
+      - ranger-logs:/opt/ranger/ews/logs
     networks:
       - ranger-postgres-net
       - apache-solr_default
       - ldap_service_ldap_network
       - trino-ranger-net
+    restart: "no"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6080/login.jsp"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
 volumes:
   ranger-logs:
