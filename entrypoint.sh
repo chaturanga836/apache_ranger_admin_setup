@@ -45,13 +45,33 @@ cd ${RANGER_HOME}/ews
 ./ranger-admin-services.sh start
 
 # 4. Keep container alive and stream logs
-echo "[I] Streaming logs..."
-touch ${RANGER_HOME}/logs/ranger-admin-$(hostname)-root.log
+REAL_LOG_DIR=$(find /opt/ranger -name logs -type d | grep ews | head -n 1)
 
-while [ ! -f /opt/ranger/ews/logs/ranger-admin-$(hostname)-root.log ]; do
-  sleep 2
+if [ -z "$REAL_LOG_DIR" ]; then
+    echo "[WARN] Could not find ews/logs directory, creating it..."
+    mkdir -p /opt/ranger/ews/logs
+    REAL_LOG_DIR="/opt/ranger/ews/logs"
+fi
+
+echo "[I] Waiting for Ranger to write its first log file in $REAL_LOG_DIR..."
+
+# Wait up to 60 seconds for ANY log file to appear
+for i in {1..20}; do
+    LOG_FILE=$(ls $REAL_LOG_DIR/*.log 2>/dev/null | head -n 1)
+    if [ -n "$LOG_FILE" ]; then
+        echo "[I] Found log file: $LOG_FILE"
+        break
+    fi
+    echo "Checking... ($i/20)"
+    sleep 3
 done
 
-# Now that the file exists, the * will work perfectly
-echo "[I] Logs found! Streaming..."
-tail -f /opt/ranger/ews/logs/ranger-admin-*.log
+if [ -z "$LOG_FILE" ]; then
+    echo "[ERROR] Ranger failed to create logs within 60 seconds."
+    echo "[I] Listing directory contents for debug:"
+    ls -R /opt/ranger/ews/
+    exit 1
+fi
+
+echo "🚀 Streaming logs from $REAL_LOG_DIR..."
+tail -f $REAL_LOG_DIR/*.log
