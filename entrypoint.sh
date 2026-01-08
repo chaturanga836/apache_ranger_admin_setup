@@ -59,5 +59,5 @@ update_prop "ranger.usersync.ldap.url" "ldaps://ec2-65-0-150-75.ap-south-1.compu
 
 # 5. Start the service
 cd ${RANGER_HOME}/ews
-./ranger-admin-services.sh start
+# ./ranger-admin-services.sh start
 tail -f ${RANGER_HOME}/logs/ranger-admin-*.log
