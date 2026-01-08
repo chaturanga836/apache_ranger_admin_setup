@@ -47,7 +47,18 @@ COPY certs/tls.crt /opt/ranger/certs/ca.crt
 # 1. Wait for DB
 # 2. Run setup.sh if not configured
 # 3. Start ranger-admin
-COPY scripts/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+# COPY scripts/entrypoint.sh /entrypoint.sh
+# RUN chmod +x /entrypoint.sh
 
-CMD ["/entrypoint.sh"]
+# CMD ["/entrypoint.sh"]
+
+COPY scripts/entrypoint.sh /entrypoint.sh
+
+# FIX 1: Convert to Unix line endings (Crucial for EC2/Ubuntu)
+RUN apt-get update && apt-get install -y dos2unix && \
+    dos2unix /entrypoint.sh && \
+    chmod +x /entrypoint.sh
+
+# FIX 2: Use ENTRYPOINT instead of CMD
+# This makes the script the "Owner" of the container process
+ENTRYPOINT ["/entrypoint.sh"]
