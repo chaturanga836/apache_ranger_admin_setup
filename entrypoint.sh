@@ -33,7 +33,7 @@ fi
 
 # Patch XML using xmlstarlet
 if [ -f "$ADMIN_CONF" ]; then
-    xmlstarlet ed -L -u "//property[name='ranger.ldap.url']/value" -v "ldaps://ec2-65-0-150-75.ap-south-1.compute.amazonaws.com:636" "$ADMIN_CONF"
+    xmlstarlet ed -L -u "//property[name='ranger.ldap.url']/value" -v "ldaps://144.24.127.112:636" "$ADMIN_CONF"
     xmlstarlet ed -L -u "//property[name='ranger.ldap.ssl.enabled']/value" -v "true" "$ADMIN_CONF"
     echo "[I] XML Patch applied."
 fi
