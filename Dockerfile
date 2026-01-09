@@ -42,7 +42,7 @@ RUN echo "Skipping DB prepare at build stage."
 RUN chmod +x /opt/ranger/setup.sh && \
     chmod +x /opt/ranger/ews/ranger-admin-services.sh
 
-COPY certs/tls.crt /opt/ranger/certs/ca.crt
+COPY certs/ca.crt /opt/ranger/certs/ca.crt
 # Entrypoint – performs:
 # 1. Wait for DB
 # 2. Run setup.sh if not configured
