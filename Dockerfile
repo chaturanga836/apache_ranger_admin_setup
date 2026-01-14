@@ -43,6 +43,7 @@ RUN chmod +x /opt/ranger/setup.sh && \
     chmod +x /opt/ranger/ews/ranger-admin-services.sh
 
 COPY certs/ca.crt /opt/ranger/certs/ca.crt
+COPY certs/trino-public.crt /opt/ranger/certs/trino-public.crt
 # Entrypoint – performs:
 # 1. Wait for DB
 # 2. Run setup.sh if not configured

@@ -27,8 +27,20 @@ if [ -f "/opt/ranger/certs/ca.crt" ]; then
     keytool -delete -alias ldap-cert -keystore "$SYSTEM_CACERTS" -storepass changeit -noprompt 2>/dev/null || true
     # Import
     keytool -import -trustcacerts -noprompt -alias ldap-cert -file /opt/ranger/certs/ca.crt -keystore "$SYSTEM_CACERTS" -storepass changeit
+
 else
     echo "[WARN] /opt/ranger/certs/ca.crt not found!"
+fi
+
+# --- Import Trino Certificate ---
+if [ -f "/opt/ranger/certs/trino-public.crt" ]; then
+    echo "[I] Importing Trino Certificate to $SYSTEM_CACERTS..."
+    # Delete if exists to allow for certificate updates
+    keytool -delete -alias trino-server -keystore "$SYSTEM_CACERTS" -storepass changeit -noprompt 2>/dev/null || true
+    # Import
+    keytool -import -trustcacerts -noprompt -alias trino-server -file /opt/ranger/certs/trino-public.crt -keystore "$SYSTEM_CACERTS" -storepass changeit
+else
+    echo "[WARN] /opt/ranger/certs/trino-public.crt not found! Resource Lookup will fail."
 fi
 
 # Patch XML using xmlstarlet
